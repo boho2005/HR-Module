@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valleysoft HR — Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* content (matches Employees / Org Chart pages) */
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --line: #e4e7ec;
+    --line-soft: #f0f0f0;
+    --ink: #1a1a1a;
+    --ink-soft: #667085;
+    --ink-mute: #98a2b3;
+    --blue: #1a73e8;
+    --blue-dark: #1558b0;
+
+    /* Valleysoft brand */
+    --navy-1: #0a1a2f;
+    --navy-2: #0d2740;
+    --teal: #2ec5e6;
+    --teal-soft: #7fdcef;
+
+    /* status */
+    --annual: #1a73e8;
+    --sick: #e64a19;
+    --remote: #0f9d58;
+    --unpaid: #6d4c41;
+    --warn: #f57c00;
+    --danger: #c62828;
+    --good: #0f9d58;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app { display: flex; min-height: 100vh; }
+
+  /* ─────────────────────────── Sidebar ─────────────────────────── */
+  .sidebar {
+    width: 244px;
+    min-width: 244px;
+    background: linear-gradient(180deg, var(--navy-2) 0%, var(--navy-1) 100%);
+    color: #cdd7e3;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+
+  /* brand */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 20px 20px 18px;
+  }
+  .brand-mark { width: 34px; height: 34px; flex-shrink: 0; }
+  .brand-text { line-height: 1; }
+  .brand-name {
+    font-size: 17px; font-weight: 700; letter-spacing: -0.02em; color: #fff;
+  }
+  .brand-name .soft { color: var(--teal); }
+  .brand-sub {
+    font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #6b8299; margin-top: 3px; font-weight: 600;
+  }
+
+  .nav-section {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: #55708a; font-weight: 600; padding: 8px 22px 6px;
+  }
+
+  .nav { padding: 6px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 11px; border-radius: 8px;
+    font-size: 13.5px; font-weight: 500; color: #b6c4d4;
+    text-decoration: none; cursor: pointer; position: relative;
+    transition: background 0.14s, color 0.14s;
+  }
+  .nav-item svg { width: 17px; height: 17px; stroke: currentColor; flex-shrink: 0; opacity: 0.9; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #eaf1f8; }
+  .nav-item.active {
+    background: rgba(46,197,230,0.14);
+    color: #fff;
+  }
+  .nav-item.active::before {
+    content: ''; position: absolute; left: -12px; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 0 3px 3px 0; background: var(--teal);
+  }
+  .nav-item.active svg { opacity: 1; stroke: var(--teal-soft); }
+
+  .nav-badge {
+    margin-left: auto; font-size: 10.5px; font-weight: 600;
+    background: rgba(46,197,230,0.18); color: var(--teal-soft);
+    padding: 1px 7px; border-radius: 20px; min-width: 20px; text-align: center;
+  }
+  .nav-item.active .nav-badge { background: var(--teal); color: #06202b; }
+
+  .sidebar-spacer { flex: 1; }
+
+  .me {
+    display: flex; align-items: center; gap: 10px;
+    margin: 12px; padding: 10px 11px;
+    border-radius: 10px; background: rgba(255,255,255,0.05);
+  }
+  .me-av {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: #fff; background: #2e7d32;
+  }
+  .me-text { line-height: 1.3; min-width: 0; }
+  .me-name { font-size: 13px; font-weight: 600; color: #eef3f8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .me-role { font-size: 11px; color: #7d93a8; }
+  .me-cog { margin-left: auto; color: #6b8299; display: flex; }
+  .me-cog svg { width: 16px; height: 16px; stroke: currentColor; }
+
+  /* ─────────────────────────── Main ─────────────────────────── */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 30px; background: var(--bg);
+    position: sticky; top: 0; z-index: 40;
+  }
+  .greet h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .greet p { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 9px; padding: 8px 12px; width: 240px;
+  }
+  .search svg { width: 15px; height: 15px; stroke: var(--ink-mute); }
+  .search input { border: none; outline: none; font-size: 13px; font-family: inherit; width: 100%; background: none; color: var(--ink); }
+  .search input::placeholder { color: var(--ink-mute); }
+
+  .icon-btn {
+    position: relative; width: 38px; height: 38px; border-radius: 9px;
+    background: #fff; border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .icon-btn svg { width: 18px; height: 18px; stroke: #475467; }
+  .icon-btn .dot {
+    position: absolute; top: 8px; right: 9px; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--danger); border: 2px solid #fff;
+  }
+
+  .content { padding: 6px 30px 34px; }
+
+  /* KPI row */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+  .kpi {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .kpi-top { display: flex; align-items: center; justify-content: space-between; }
+  .kpi-ico {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .kpi-ico svg { width: 19px; height: 19px; stroke-width: 2; }
+  .kpi-delta { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .kpi-delta.up { color: var(--good); background: #e7f5ec; }
+  .kpi-delta.flat { color: var(--ink-mute); background: #f2f4f7; }
+  .kpi-num { font-size: 27px; font-weight: 700; letter-spacing: -0.03em; margin-top: 12px; }
+  .kpi-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+
+  /* Panels grid */
+  .grid-main { display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-sub  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 15px 18px 14px; border-bottom: 1px solid var(--line-soft);
+  }
+  .panel-head h3 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .count-pill { font-size: 11px; font-weight: 600; color: var(--blue); background: #e8f1fd; padding: 1px 8px; border-radius: 20px; }
+  .panel-link { font-size: 12px; color: var(--ink-soft); text-decoration: none; cursor: pointer; }
+  .panel-link:hover { color: var(--blue); }
+  .panel-body { padding: 6px 8px 8px; }
+
+  /* avatar (shared) */
+  .av {
+    width: 34px; height: 34px; min-width: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+  .av.sm { width: 30px; height: 30px; min-width: 30px; font-size: 11px; }
+
+  /* leave request row */
+  .req {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 10px; border-radius: 9px;
+  }
+  .req:hover { background: #fafbfc; }
+  .req + .req { border-top: 1px solid var(--line-soft); }
+  .req-info { flex: 1; min-width: 0; }
+  .req-name { font-size: 13.5px; font-weight: 600; }
+  .req-meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .tag {
+    font-size: 10.5px; font-weight: 600; padding: 1.5px 8px; border-radius: 20px;
+    text-transform: capitalize;
+  }
+  .tag.annual { color: var(--annual); background: #e8f1fd; }
+  .tag.sick   { color: var(--sick);   background: #fdece5; }
+  .tag.remote { color: var(--remote); background: #e7f5ec; }
+  .tag.unpaid { color: var(--unpaid); background: #efe9e6; }
+
+  .req-actions { display: flex; gap: 7px; flex-shrink: 0; }
+  .act {
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line); background: #fff;
+  }
+  .act svg { width: 16px; height: 16px; stroke-width: 2.2; }
+  .act.approve { border-color: #cdead6; }
+  .act.approve svg { stroke: var(--good); }
+  .act.approve:hover { background: #eafaef; }
+  .act.decline svg { stroke: var(--ink-mute); }
+  .act.decline:hover { background: #fdece5; border-color: #f5c6c6; }
+  .act.decline:hover svg { stroke: var(--danger); }
+
+  .resolved {
+    font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .resolved.ok { color: var(--good); }
+  .resolved.no { color: var(--ink-mute); }
+  .resolved svg { width: 15px; height: 15px; stroke-width: 2.2; }
+
+  /* documents row */
+  .doc {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 10px; border-radius: 9px;
+  }
+  .doc + .doc { border-top: 1px solid var(--line-soft); }
+  .doc:hover { background: #fafbfc; }
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-name { font-size: 13.5px; font-weight: 600; }
+  .doc-missing { font-size: 12px; color: var(--sick); margin-top: 2px; }
+  .doc-missing b { font-weight: 600; }
+  .btn-remind {
+    font-size: 12px; font-weight: 500; padding: 6px 13px; border-radius: 8px;
+    border: 1px solid var(--line); background: #fff; color: #475467; cursor: pointer;
+    font-family: inherit; flex-shrink: 0; white-space: nowrap;
+  }
+  .btn-remind:hover { background: #f5f5f5; }
+  .btn-remind.sent { color: var(--good); border-color: #cdead6; background: #eafaef; cursor: default; }
+
+  /* recruitment pipeline */
+  .pipe { padding: 4px 18px 18px; }
+  .pipe-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .pipe-label { font-size: 12.5px; color: #475467; width: 78px; flex-shrink: 0; }
+  .pipe-bar { flex: 1; height: 8px; background: #eef1f4; border-radius: 20px; overflow: hidden; }
+  .pipe-fill { height: 100%; border-radius: 20px; }
+  .pipe-val { font-size: 12.5px; font-weight: 600; width: 24px; text-align: right; }
+
+  /* goals pending approval */
+  .goals-body { padding: 6px 18px 16px; }
+  .gpa-row { display: flex; align-items: center; gap: 11px; padding: 9px 0; }
+  .gpa-row + .gpa-row { border-top: 1px solid #f0f2f4; }
+  .gpa-name { font-size: 13px; font-weight: 500; color: var(--ink); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gpa-count { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #b9770e; background: #fff4e0; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+  .gpa-empty { font-size: 13px; color: var(--ink-soft); padding: 10px 0; }
+
+  /* upcoming */
+  .up-body { padding: 6px 8px 10px; }
+  .up {
+    display: flex; align-items: center; gap: 12px; padding: 10px;
+    border-radius: 9px;
+  }
+  .up + .up { border-top: 1px solid var(--line-soft); }
+  .up-ico {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .up-info { flex: 1; min-width: 0; }
+  .up-title { font-size: 13px; font-weight: 600; }
+  .up-sub { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
+  .up-when { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); flex-shrink: 0; }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #101828; color: #fff; font-size: 13px; font-weight: 500;
+    padding: 11px 18px; border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+    display: flex; align-items: center; gap: 9px; opacity: 0; pointer-events: none;
+    transition: opacity 0.22s, transform 0.22s; z-index: 900;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast svg { width: 16px; height: 16px; stroke: var(--teal); stroke-width: 2.4; }
+
+  .empty { text-align: center; padding: 26px 10px; color: var(--ink-mute); font-size: 13px; }
+  .empty svg { width: 26px; height: 26px; stroke: #cbd2da; margin-bottom: 8px; }
+
+  /* mobile menu button */
+  .menu-toggle { display: none; }
+
+  @media (max-width: 1080px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid-main { grid-template-columns: 1fr; }
+    .grid-sub { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    .sidebar {
+      position: fixed; left: 0; top: 0; z-index: 200;
+      transform: translateX(-100%); transition: transform 0.25s;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .menu-toggle {
+      display: flex; width: 38px; height: 38px; border-radius: 9px;
+      background: #fff; border: 1px solid var(--line);
+      align-items: center; justify-content: center; cursor: pointer;
+    }
+    .menu-toggle svg { width: 20px; height: 20px; stroke: #475467; }
+    .search { display: none; }
+    .content { padding: 6px 16px 30px; }
+    .topbar { padding: 14px 16px; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ══════════════════ SIDEBAR ══════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-label="Valleysoft">
+        <!-- striped speed-line "V" mark -->
+        <g fill="#ffffff">
+          <rect x="2"  y="4"  width="19" height="3.6" rx="1.8"/>
+          <rect x="5"  y="10" width="16" height="3.6" rx="1.8"/>
+          <rect x="8"  y="16" width="13" height="3.6" rx="1.8"/>
+          <rect x="11" y="22" width="10" height="3.6" rx="1.8"/>
+        </g>
+        <!-- right rising stroke in teal -->
+        <path d="M16 26 L21.5 33 L38 5 L32.5 4 Z" fill="#2ec5e6"/>
+      </svg>
+      <div class="brand-text">
+        <div class="brand-name">Valley<span class="soft">soft</span></div>
+        <div class="brand-sub">HR Suite</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Workspace</div>
+    <nav class="nav">
+      <a class="nav-item active" data-page="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="Inbox.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><path d="M4 5h16v14H4z"/><path d="M4 8l8 5 8-5"/></svg>
+        Inbox
+        <span class="nav-badge">3</span>
+      </a>
+      <a class="nav-item" href="Employees.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.6"/><path d="M18 20a5 5 0 0 0-3-4.6"/></svg>
+        Employees
+      </a>
+      <a class="nav-item" href="Organization_Chart.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-2h12v2M12 12v2"/></svg>
+        Organization Chart
+      </a>
+      <a class="nav-item" href="Leaves.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>
+        Leaves
+        <span class="nav-badge">5</span>
+      </a>
+      <a class="nav-item" href="Goals.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>
+        Goals
+      </a>
+      <a class="nav-item" href="Recruitment.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+        Recruitment
+        <span class="nav-badge">6</span>
+      </a>
+      <a class="nav-item" href="Documents.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>
+        Documents
+        <span class="nav-badge">6</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="me">
+      <div class="me-av">HI</div>
+      <div class="me-text">
+        <div class="me-name">Hany Ibrahim</div>
+        <div class="me-role">HR Manager</div>
+      </div>
+      <span class="me-cog"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
+    </div>
+  </aside>
+
+  <!-- ══════════════════ MAIN ══════════════════ -->
+  <main class="main">
+
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="greet">
+          <h2>Good morning, Hany</h2>
+          <p id="today"></p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+          <input type="text" placeholder="Search employees, requests…">
+        </div>
+        <button class="icon-btn" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- KPI ROW -->
+      <div class="kpis">
+        <div class="kpi">
+          <div class="kpi-top">
+            <div class="kpi-ico" style="background:#e8f1fd;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1a73e8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.6"/><path d="M18 20a5 5 0 0 0-3-4.6"/></svg>
+            </div>
+            <span class="kpi-delta up">↑ 3</span>
+          </div>
+          <div class="kpi-num">42</div>
+          <div class="kpi-label">Total employees</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-top">
+            <div class="kpi-ico" style="background:#fdece5;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#e64a19"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>
+            </div>
+            <span class="kpi-delta flat">today</span>
+          </div>
+          <div class="kpi-num">3</div>
+          <div class="kpi-label">On leave today</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-top">
+            <div class="kpi-ico" style="background:#fef3e2;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#f57c00"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </div>
+            <span class="kpi-delta up" style="color:#f57c00;background:#fef3e2;">needs review</span>
+          </div>
+          <div class="kpi-num" id="kpi-pending">5</div>
+          <div class="kpi-label">Pending leave requests</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-top">
+            <div class="kpi-ico" style="background:#e7f5ec;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#0f9d58"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+            </div>
+            <span class="kpi-delta flat">open</span>
+          </div>
+          <div class="kpi-num">6</div>
+          <div class="kpi-label">Open positions</div>
+        </div>
+      </div>
+
+      <!-- MAIN PANELS -->
+      <div class="grid-main">
+
+        <!-- Leave requests -->
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Leave requests <span class="count-pill" id="req-count">5 pending</span></h3>
+            <a class="panel-link" data-page="Leaves">View all</a>
+          </div>
+          <div class="panel-body" id="req-list"></div>
+        </section>
+
+        <!-- Missing documents -->
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Action needed: missing documents</h3>
+            <a class="panel-link" data-page="Documents">View all</a>
+          </div>
+          <div class="panel-body" id="doc-list"></div>
+        </section>
+
+      </div>
+
+      <!-- SECONDARY PANELS -->
+      <div class="grid-sub">
+
+        <!-- Recruitment pipeline -->
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Recruitment pipeline</h3>
+            <a class="panel-link" data-page="Recruitment">Open</a>
+          </div>
+          <div class="pipe" id="pipe"></div>
+        </section>
+
+        <!-- Goals pending approval -->
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Goals pending approval</h3>
+            <a class="panel-link" href="Goals.html">Details</a>
+          </div>
+          <div class="goals-body" id="goals"></div>
+        </section>
+
+        <!-- Upcoming -->
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Upcoming</h3>
+          </div>
+          <div class="up-body" id="upcoming"></div>
+        </section>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toast-msg">Done</span>
+</div>
+
+<script>
+// ── Shared roster (consistent with Employees & Org Chart pages) ──────────────
+const people = {
+  'Ahmed Sayed':   '#1a73e8',
+  'Mona Hassan':   '#0f9d58',
+  'Karim Nour':    '#e64a19',
+  'Sara Fahmy':    '#ab47bc',
+  'Omar Tarek':    '#f57c00',
+  'Rania Adel':    '#00838f',
+  'Youssef Magdy': '#c62828',
+  'Dina Khaled':   '#4527a0',
+  'Hany Ibrahim':  '#2e7d32',
+  'Nada Salah':    '#6d4c41',
+  'Layla Mostafa': '#00838f',
+};
+function initials(n){ return n.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join(''); }
+function avatar(name, cls){
+  const c = people[name] || '#888';
+  return `<div class="av ${cls||''}" style="background:${c}">${initials(name)}</div>`;
+}
+
+// ── Today's date ─────────────────────────────────────────────────────────────
+document.getElementById('today').textContent =
+  new Date().toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric', year:'numeric'});
+
+// ── Leave requests data ──────────────────────────────────────────────────────
+let requests = [
+  { name:'Omar Tarek',    role:'Senior Developer',  type:'annual', label:'Annual leave', dates:'Jul 10 – Jul 14', days:'5 days' },
+  { name:'Rania Adel',    role:'Senior Analyst',    type:'sick',   label:'Sick leave',   dates:'Jul 8',           days:'1 day'  },
+  { name:'Karim Nour',    role:'Development Mgr',    type:'annual', label:'Annual leave', dates:'Jul 21 – Jul 25', days:'5 days' },
+  { name:'Youssef Magdy', role:'Senior QA',         type:'remote', label:'Remote day',   dates:'Jul 9',           days:'1 day'  },
+  { name:'Sara Fahmy',    role:'Analysis Manager',  type:'unpaid', label:'Unpaid leave', dates:'Aug 1 – Aug 3',   days:'3 days' },
+];
+
+function renderRequests(){
+  const box = document.getElementById('req-list');
+  const pending = requests.filter(r => !r.done);
+  document.getElementById('kpi-pending').textContent = pending.length;
+  document.getElementById('req-count').textContent = pending.length + ' pending';
+
+  if(requests.length === 0){
+    box.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M20 6L9 17l-5-5"/></svg>
+      <div>All caught up — no requests to review.</div></div>`;
+    return;
+  }
+
+  box.innerHTML = requests.map((r, i) => {
+    if(r.done){
+      return `<div class="req">
+        ${avatar(r.name)}
+        <div class="req-info">
+          <div class="req-name">${r.name}</div>
+          <div class="req-meta"><span class="tag ${r.type}">${r.label}</span> ${r.dates} · ${r.days}</div>
+        </div>
+        <div class="resolved ${r.done==='approve'?'ok':'no'}">
+          ${r.done==='approve'
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg> Approved'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6L6 18"/></svg> Declined'}
+        </div>
+      </div>`;
+    }
+    return `<div class="req">
+      ${avatar(r.name)}
+      <div class="req-info">
+        <div class="req-name">${r.name}</div>
+        <div class="req-meta"><span class="tag ${r.type}">${r.label}</span> ${r.dates} · ${r.days}</div>
+      </div>
+      <div class="req-actions">
+        <button class="act approve" title="Approve" onclick="resolve(${i},'approve')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg>
+        </button>
+        <button class="act decline" title="Decline" onclick="resolve(${i},'decline')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resolve(i, action){
+  requests[i].done = action;
+  renderRequests();
+  const r = requests[i];
+  toast(action==='approve' ? `Approved ${r.name}'s ${r.label.toLowerCase()}` : `Declined ${r.name}'s request`);
+}
+
+// ── Missing documents data ───────────────────────────────────────────────────
+let docs = [
+  { name:'Omar Tarek',    role:'Senior Developer',  missing:'Signed contract' },
+  { name:'Nada Salah',    role:'Finance Manager',   missing:'ID copy, Tax form' },
+  { name:'Layla Mostafa', role:'Junior Developer',  missing:'Bank details, NDA' },
+  { name:'Youssef Magdy', role:'Senior QA',         missing:'NDA' },
+];
+
+function renderDocs(){
+  const box = document.getElementById('doc-list');
+  box.innerHTML = docs.map((d, i) => `
+    <div class="doc">
+      ${avatar(d.name, 'sm')}
+      <div class="doc-info">
+        <div class="doc-name">${d.name}</div>
+        <div class="doc-missing">Missing: <b>${d.missing}</b></div>
+      </div>
+      <button class="btn-remind" id="rem-${i}" onclick="remind(${i})">Send reminder</button>
+    </div>`).join('');
+}
+
+function remind(i){
+  const btn = document.getElementById('rem-'+i);
+  btn.classList.add('sent');
+  btn.textContent = '✓ Reminded';
+  btn.onclick = null;
+  toast(`Reminder sent to ${docs[i].name}`);
+}
+
+// ── Recruitment pipeline (open roles come from the vacant org-chart seats) ───
+const pipe = [
+  { label:'Applied',    val:38, color:'#1a73e8' },
+  { label:'Screening',  val:16, color:'#00838f' },
+  { label:'Interview',  val:7,  color:'#f57c00' },
+  { label:'Offer',      val:2,  color:'#0f9d58' },
+];
+document.getElementById('pipe').innerHTML = pipe.map(p => `
+  <div class="pipe-row">
+    <span class="pipe-label">${p.label}</span>
+    <div class="pipe-bar"><div class="pipe-fill" style="width:${(p.val/38*100)}%;background:${p.color}"></div></div>
+    <span class="pipe-val">${p.val}</span>
+  </div>`).join('');
+
+// ── Goals pending approval ───────────────────────────────────────────────────
+// Employees who still have goals awaiting the manager's approval.
+const goalsPending = [
+  { name:'Sara Fahmy',    pending:3 },
+  { name:'Omar Tarek',    pending:2 },
+  { name:'Karim Nour',    pending:2 },
+  { name:'Youssef Magdy', pending:1 },
+  { name:'Dina Khaled',   pending:1 },
+].sort((a,b) => b.pending - a.pending);
+
+document.getElementById('goals').innerHTML = goalsPending.length
+  ? goalsPending.map(u => `
+      <div class="gpa-row">
+        ${avatar(u.name, 'sm')}
+        <span class="gpa-name">${u.name}</span>
+        <span class="gpa-count">${u.pending} ${u.pending === 1 ? 'goal' : 'goals'}</span>
+      </div>`).join('')
+  : `<div class="gpa-empty">No goals pending approval 🎉</div>`;
+
+// ── Upcoming ─────────────────────────────────────────────────────────────────
+const upcoming = [
+  { icon:'🎉', bg:'#e8f1fd', title:'Layla Mostafa starts', sub:'Junior Developer · Onboarding', when:'Jul 14' },
+  { icon:'🏆', bg:'#fef3e2', title:'Ahmed Sayed — 5 years', sub:'Work anniversary',            when:'Jul 12' },
+  { icon:'🎂', bg:'#fdece5', title:'Sara Fahmy',            sub:'Birthday',                     when:'Jul 9'  },
+];
+document.getElementById('upcoming').innerHTML = upcoming.map(u => `
+  <div class="up">
+    <div class="up-ico" style="background:${u.bg}">${u.icon}</div>
+    <div class="up-info"><div class="up-title">${u.title}</div><div class="up-sub">${u.sub}</div></div>
+    <span class="up-when">${u.when}</span>
+  </div>`).join('');
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2400);
+}
+
+// ── Sidebar nav (pages without a real file show a friendly note) ─────────────
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    const page = item.dataset.page;
+    if(page !== 'Dashboard'){
+      toast(`${page} — coming soon in this mockup`);
+    }
+    document.getElementById('sidebar').classList.remove('open');
+  });
+});
+document.querySelectorAll('.panel-link[data-page]').forEach(link => {
+  link.addEventListener('click', () => toast(`${link.dataset.page} — coming soon in this mockup`));
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+renderRequests();
+renderDocs();
+</script>
+</body>
+</html>

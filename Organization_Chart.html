@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organization Chart</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f4f5f7;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar h1 { font-size: 14px; font-weight: 600; color: #333; }
+  .topbar-right { display: flex; gap: 8px; }
+
+  .btn {
+    padding: 6px 13px; font-size: 12px; font-weight: 500;
+    border-radius: 6px; border: 1px solid #d0d0d0;
+    background: #fff; color: #444; cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:hover { background: #f5f5f5; }
+  .btn-primary { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+  .btn-primary:hover { background: #1558b0; }
+
+  /* ── Tree ── */
+  .tree-wrap { padding: 28px 32px; overflow: auto; min-height: calc(100vh - 53px); }
+
+  .tree-node { position: relative; }
+
+  /* vertical line connecting children */
+  .tree-children {
+    margin-left: 20px;
+    padding-left: 16px;
+    border-left: 1.5px solid #dde1e7;
+  }
+
+  .tree-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  /* horizontal tick from the vertical line to the node */
+  .tree-children > .tree-node > .tree-row::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 16px;
+    width: 14px;
+    height: 1.5px;
+    background: #dde1e7;
+  }
+
+  /* ── Toggle ── */
+  .tog {
+    width: 18px; min-width: 18px; height: 18px;
+    margin-top: 7px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    color: #aaa; font-size: 9px; flex-shrink: 0;
+    transition: color 0.12s;
+  }
+  .tog:hover { color: #555; }
+  .tog.leaf { cursor: default; }
+
+  /* ── Node card ── */
+  .node-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #e4e7ec;
+    border-radius: 8px;
+    padding: 8px 10px 8px 12px;
+    flex: 1;
+    min-width: 0;
+    max-width: 320px;
+    transition: box-shadow 0.12s;
+  }
+  .node-card:hover { box-shadow: 0 1px 6px rgba(0,0,0,0.09); }
+
+  /* department accent stripe */
+  .node-card.dept-executive   { border-left: 3px solid #1a73e8; }
+  .node-card.dept-technology  { border-left: 3px solid #0f9d58; }
+  .node-card.dept-development { border-left: 3px solid #00838f; }
+  .node-card.dept-analysis    { border-left: 3px solid #f57c00; }
+  .node-card.dept-testing     { border-left: 3px solid #ab47bc; }
+  .node-card.dept-operations  { border-left: 3px solid #e64a19; }
+  .node-card.dept-hr          { border-left: 3px solid #c62828; }
+  .node-card.dept-finance     { border-left: 3px solid #2e7d32; }
+  .node-card.dept-sales       { border-left: 3px solid #6d4c41; }
+
+  /* avatar */
+  .av {
+    width: 32px; height: 32px; min-width: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #fff;
+    flex-shrink: 0;
+  }
+  .av.vacant { background: #eee !important; color: #bbb; font-size: 15px; }
+
+  /* text */
+  .node-text { flex: 1; min-width: 0; }
+  .node-role {
+    font-size: 13px; font-weight: 600; color: #1a1a1a;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .node-person {
+    font-size: 11px; color: #777; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .node-person.vacant { color: #bbb; font-style: italic; }
+
+  /* three-dot menu button */
+  .menu-btn {
+    width: 24px; height: 24px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    border-radius: 5px; font-size: 16px; color: #bbb;
+    line-height: 1; transition: background 0.12s, color 0.12s;
+    position: relative;
+  }
+  .menu-btn:hover { background: #f0f0f0; color: #555; }
+
+  /* ── Dropdown menu ── */
+  .dropdown {
+    position: absolute;
+    top: 100%; right: 0;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    min-width: 160px;
+    z-index: 200;
+    overflow: hidden;
+    display: none;
+  }
+  .dropdown.open { display: block; }
+
+  .dd-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 14px;
+    font-size: 13px; color: #333; cursor: pointer;
+    transition: background 0.1s;
+    border: none; background: none; width: 100%; text-align: left; font-family: inherit;
+  }
+  .dd-item:hover { background: #f5f7fa; }
+  .dd-item.danger { color: #c62828; }
+  .dd-item.danger:hover { background: #fff5f5; }
+  .dd-sep { border: none; border-top: 1px solid #eee; margin: 3px 0; }
+
+  /* ── Assign modal ── */
+  .backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.28); z-index: 500;
+    align-items: center; justify-content: center;
+  }
+  .backdrop.open { display: flex; }
+
+  .modal {
+    background: #fff; border-radius: 11px; width: 360px; max-width: 95vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18); overflow: hidden;
+  }
+  .modal-head {
+    padding: 14px 18px; border-bottom: 1px solid #eee;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-head h3 { font-size: 14px; font-weight: 600; }
+  .modal-x { background: none; border: none; font-size: 18px; cursor: pointer; color: #aaa; }
+  .modal-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .modal-foot { padding: 12px 18px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 8px; }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; font-weight: 500; color: #666; }
+  .field input, .field select {
+    font-size: 13px; padding: 7px 10px; border-radius: 7px;
+    border: 1px solid #d0d0d0; font-family: inherit; outline: none; width: 100%;
+  }
+  .field input:focus, .field select:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.1); }
+  .field input[readonly] { background: #f7f7f7; color: #999; cursor: default; }
+  .field select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    padding-right: 28px; cursor: pointer;
+  }
+  .hint { font-size: 11px; color: #bbb; }
+
+  .expand-link { font-size: 12px; color: #888; background: none; border: none; cursor: pointer; }
+  .expand-link:hover { color: #1a73e8; }
+
+  /* ===== Valleysoft sidebar shell (shared) ===== */
+  :root{
+    --vs-navy-1:#0a1a2f; --vs-navy-2:#0d2740;
+    --vs-teal:#2ec5e6; --vs-teal-soft:#7fdcef; --vs-blue:#1a73e8;
+  }
+  .app{ display:flex; min-height:100vh; }
+  .sidebar{
+    width:244px; min-width:244px;
+    background:linear-gradient(180deg,var(--vs-navy-2) 0%,var(--vs-navy-1) 100%);
+    color:#cdd7e3; display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh; z-index:200;
+  }
+  .brand{ display:flex; align-items:center; gap:11px; padding:20px 20px 18px; }
+  .brand-mark{ width:34px; height:34px; flex-shrink:0; }
+  .brand-text{ line-height:1; }
+  .brand-name{ font-size:17px; font-weight:700; letter-spacing:-0.02em; color:#fff; }
+  .brand-name .soft{ color:var(--vs-teal); }
+  .brand-sub{ font-size:8.5px; letter-spacing:0.18em; text-transform:uppercase; color:#6b8299; margin-top:3px; font-weight:600; }
+  .nav-section{ font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#55708a; font-weight:600; padding:8px 22px 6px; }
+  .nav{ padding:6px 12px; display:flex; flex-direction:column; gap:2px; }
+  .nav-item{ display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:8px; font-size:13.5px; font-weight:500; color:#b6c4d4; text-decoration:none; cursor:pointer; position:relative; transition:background .14s,color .14s; }
+  .nav-item svg{ width:17px; height:17px; stroke:currentColor; flex-shrink:0; opacity:.9; }
+  .nav-item:hover{ background:rgba(255,255,255,.06); color:#eaf1f8; }
+  .nav-item.active{ background:rgba(46,197,230,.14); color:#fff; }
+  .nav-item.active::before{ content:''; position:absolute; left:-12px; top:8px; bottom:8px; width:3px; border-radius:0 3px 3px 0; background:var(--vs-teal); }
+  .nav-item.active svg{ opacity:1; stroke:var(--vs-teal-soft); }
+  .nav-badge{ margin-left:auto; font-size:10.5px; font-weight:600; background:rgba(46,197,230,.18); color:var(--vs-teal-soft); padding:1px 7px; border-radius:20px; min-width:20px; text-align:center; }
+  .nav-item.active .nav-badge{ background:var(--vs-teal); color:#06202b; }
+  .sidebar-spacer{ flex:1; }
+  .me{ display:flex; align-items:center; gap:10px; margin:12px; padding:10px 11px; border-radius:10px; background:rgba(255,255,255,.05); }
+  .me-av{ width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff; background:#2e7d32; }
+  .me-text{ line-height:1.3; min-width:0; }
+  .me-name{ font-size:13px; font-weight:600; color:#eef3f8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .me-role{ font-size:11px; color:#7d93a8; }
+  .me-cog{ margin-left:auto; color:#6b8299; display:flex; }
+  .me-cog svg{ width:16px; height:16px; stroke:currentColor; }
+  .main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .menu-toggle{ display:none; width:34px; height:34px; border-radius:7px; background:#fff; border:1px solid #d0d0d0; align-items:center; justify-content:center; cursor:pointer; }
+  .menu-toggle svg{ width:19px; height:19px; stroke:#475467; }
+  .vs-toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:#101828; color:#fff; font-size:13px; font-weight:500; padding:11px 18px; border-radius:10px; box-shadow:0 8px 28px rgba(0,0,0,.25); display:flex; align-items:center; gap:9px; opacity:0; pointer-events:none; transition:opacity .22s,transform .22s; z-index:900; }
+  .vs-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .vs-toast svg{ width:16px; height:16px; stroke:var(--vs-teal); stroke-width:2.4; }
+
+  @media (max-width:760px){
+    .sidebar{ position:fixed; left:0; top:0; transform:translateX(-100%); transition:transform .25s; }
+    .sidebar.open{ transform:translateX(0); }
+    .menu-toggle{ display:flex; }
+    .tree-wrap{ padding:20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ══════════════════ SIDEBAR ══════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-label="Valleysoft">
+        <g fill="#ffffff">
+          <rect x="2"  y="4"  width="19" height="3.6" rx="1.8"/>
+          <rect x="5"  y="10" width="16" height="3.6" rx="1.8"/>
+          <rect x="8"  y="16" width="13" height="3.6" rx="1.8"/>
+          <rect x="11" y="22" width="10" height="3.6" rx="1.8"/>
+        </g>
+        <path d="M16 26 L21.5 33 L38 5 L32.5 4 Z" fill="#2ec5e6"/>
+      </svg>
+      <div class="brand-text">
+        <div class="brand-name">Valley<span class="soft">soft</span></div>
+        <div class="brand-sub">HR Suite</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Workspace</div>
+    <nav class="nav">
+      <a class="nav-item" href="Dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="Inbox.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><path d="M4 5h16v14H4z"/><path d="M4 8l8 5 8-5"/></svg>
+        Inbox <span class="nav-badge">3</span>
+      </a>
+      <a class="nav-item" href="Employees.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.6"/><path d="M18 20a5 5 0 0 0-3-4.6"/></svg>
+        Employees
+      </a>
+      <a class="nav-item active" href="Organization_Chart.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-2h12v2M12 12v2"/></svg>
+        Organization Chart
+      </a>
+      <a class="nav-item" href="Leaves.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>
+        Leaves <span class="nav-badge">5</span>
+      </a>
+      <a class="nav-item" href="Goals.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>
+        Goals
+      </a>
+      <a class="nav-item" href="Recruitment.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+        Recruitment <span class="nav-badge">6</span>
+      </a>
+      <a class="nav-item" href="Documents.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>
+        Documents <span class="nav-badge">6</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="me">
+      <div class="me-av">HI</div>
+      <div class="me-text">
+        <div class="me-name">Hany Ibrahim</div>
+        <div class="me-role">HR Manager</div>
+      </div>
+      <span class="me-cog"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
+    </div>
+  </aside>
+
+  <!-- ══════════════════ MAIN ══════════════════ -->
+  <main class="main">
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button class="menu-toggle" id="vs-menu" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <h1>Organization Chart</h1>
+  </div>
+  <div class="topbar-right">
+    <button class="expand-link" id="exp-btn" onclick="toggleAll()">Collapse all</button>
+    <button class="btn" onclick="openAddRole(null)">+ Add role</button>
+  </div>
+</div>
+
+<div class="tree-wrap" id="tree-wrap"></div>
+
+  </main>
+</div><!-- /app -->
+
+<!-- Modal -->
+<div class="backdrop" id="backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="m-title"></h3>
+      <button class="modal-x" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-foot" id="m-foot"></div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#1a73e8','#0f9d58','#e64a19','#ab47bc','#f57c00','#00838f','#c62828','#4527a0','#2e7d32','#6d4c41'];
+let nextRid = 30, allExpanded = true, collapsed = {}, openMenuId = null;
+
+let people = [
+  {id:1,  name:'Ahmed Sayed',   color:'#1a73e8'},
+  {id:2,  name:'Mona Hassan',   color:'#0f9d58'},
+  {id:3,  name:'Karim Nour',    color:'#e64a19'},
+  {id:4,  name:'Sara Fahmy',    color:'#ab47bc'},
+  {id:5,  name:'Omar Tarek',    color:'#f57c00'},
+  {id:6,  name:'Rania Adel',    color:'#00838f'},
+  {id:7,  name:'Youssef Magdy', color:'#c62828'},
+  {id:8,  name:'Dina Khaled',   color:'#4527a0'},
+  {id:9,  name:'Hany Ibrahim',  color:'#2e7d32'},
+  {id:10, name:'Nada Salah',    color:'#6d4c41'},
+];
+
+let tree = {
+  id:1, title:'Chief Executive Officer', dept:'executive', personId:1, children:[
+    {id:2, title:'Chief Technology Officer', dept:'technology', personId:2, children:[
+      {id:5, title:'Development Manager', dept:'development', personId:3, children:[
+        {id:10, title:'Senior Developer',  dept:'development', personId:5, children:[]},
+        {id:11, title:'Junior Developer',  dept:'development', personId:null, children:[]},
+        {id:12, title:'Junior Developer',  dept:'development', personId:null, children:[]},
+      ]},
+      {id:6, title:'Analysis Manager', dept:'analysis', personId:4, children:[
+        {id:13, title:'Senior Business Analyst', dept:'analysis', personId:6, children:[]},
+        {id:14, title:'Business Analyst',        dept:'analysis', personId:null, children:[]},
+      ]},
+      {id:7, title:'QA Manager', dept:'testing', personId:null, children:[
+        {id:15, title:'Senior QA Engineer', dept:'testing', personId:7, children:[]},
+        {id:16, title:'QA Engineer',        dept:'testing', personId:null, children:[]},
+      ]},
+    ]},
+    {id:3, title:'Operations Manager', dept:'operations', personId:8, children:[
+      {id:8,  title:'HR Manager',      dept:'hr',      personId:9,  children:[]},
+      {id:9,  title:'Finance Manager', dept:'finance', personId:10, children:[]},
+    ]},
+    {id:4, title:'Sales Manager', dept:'sales', personId:null, children:[]},
+  ]
+};
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function personById(id){ return people.find(p=>p.id===id); }
+function initials(n){ return n.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join(''); }
+function deptLabel(d){
+  return {executive:'Executive',technology:'Technology',development:'Development',
+    analysis:'Analysis',testing:'Testing',operations:'Operations',
+    hr:'Human Resources',finance:'Finance',sales:'Sales'}[d]||d;
+}
+function findNode(node,id){ if(node.id===id)return node; for(let c of node.children){const f=findNode(c,id);if(f)return f;} return null; }
+function removeNode(node,id){ node.children=node.children.filter(c=>c.id!==id); node.children.forEach(c=>removeNode(c,id)); }
+
+// Close any open dropdown on outside click
+document.addEventListener('click', ()=>{ closeMenus(); });
+
+function closeMenus(){
+  document.querySelectorAll('.dropdown.open').forEach(d=>d.classList.remove('open'));
+  openMenuId=null;
+}
+
+function toggleAll(){
+  allExpanded=!allExpanded;
+  function walk(n){ collapsed[n.id]=!allExpanded; n.children.forEach(walk); }
+  walk(tree);
+  document.getElementById('exp-btn').textContent = allExpanded?'Collapse all':'Expand all';
+  render();
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function render(){
+  const w=document.getElementById('tree-wrap');
+  w.innerHTML='';
+  w.appendChild(renderNode(tree, true));
+}
+
+function renderNode(node, isRoot){
+  const wrap=document.createElement('div');
+  wrap.className='tree-node';
+
+  const row=document.createElement('div');
+  row.className='tree-row';
+
+  // Toggle arrow
+  const tog=document.createElement('button');
+  tog.className='tog'+(node.children.length===0?' leaf':'');
+  if(node.children.length===0){
+    // small dot for leaf
+    tog.innerHTML='<span style="width:5px;height:5px;border-radius:50%;background:#ccc;display:block;"></span>';
+  } else {
+    tog.textContent=collapsed[node.id]?'▶':'▼';
+    tog.onclick=(e)=>{ e.stopPropagation(); collapsed[node.id]=!collapsed[node.id]; render(); };
+  }
+
+  // Card
+  const card=document.createElement('div');
+  card.className=`node-card dept-${node.dept}`;
+
+  // Avatar
+  const person=personById(node.personId);
+  const av=document.createElement('div');
+  av.className='av'+(person?'':' vacant');
+  av.style.background=person?person.color:'';
+  av.textContent=person?initials(person.name):'?';
+
+  // Text
+  const txt=document.createElement('div');
+  txt.className='node-text';
+  txt.innerHTML=`
+    <div class="node-role">${node.title}</div>
+    <div class="node-person${person?'':' vacant'}">${person?person.name:'Vacant'}</div>
+  `;
+
+  // Three-dot menu button
+  const menuWrap=document.createElement('div');
+  menuWrap.style.position='relative';
+
+  const menuBtn=document.createElement('button');
+  menuBtn.className='menu-btn';
+  menuBtn.textContent='⋯';
+  menuBtn.title='Options';
+  menuBtn.onclick=(e)=>{
+    e.stopPropagation();
+    const dd=menuWrap.querySelector('.dropdown');
+    const isOpen=dd.classList.contains('open');
+    closeMenus();
+    if(!isOpen){ dd.classList.add('open'); openMenuId=node.id; }
+  };
+
+  // Dropdown
+  const dd=document.createElement('div');
+  dd.className='dropdown';
+
+  // Assign item
+  const ddAssign=document.createElement('button');
+  ddAssign.className='dd-item';
+  ddAssign.innerHTML='<span>👤</span> '+(person?'Reassign person':'Assign person');
+  ddAssign.onclick=(e)=>{ e.stopPropagation(); closeMenus(); openAssign(node.id); };
+  dd.appendChild(ddAssign);
+
+  // Add sub-role
+  const ddAdd=document.createElement('button');
+  ddAdd.className='dd-item';
+  ddAdd.innerHTML='<span>➕</span> Add sub-role';
+  ddAdd.onclick=(e)=>{ e.stopPropagation(); closeMenus(); openAddRole(node.id); };
+  dd.appendChild(ddAdd);
+
+  // Remove (not for root)
+  if(!isRoot){
+    const sep=document.createElement('hr');
+    sep.className='dd-sep';
+    dd.appendChild(sep);
+    const ddDel=document.createElement('button');
+    ddDel.className='dd-item danger';
+    ddDel.innerHTML='<span>🗑</span> Remove role';
+    ddDel.onclick=(e)=>{ e.stopPropagation(); closeMenus(); confirmDelete(node.id); };
+    dd.appendChild(ddDel);
+  }
+
+  menuWrap.appendChild(menuBtn);
+  menuWrap.appendChild(dd);
+
+  card.appendChild(av);
+  card.appendChild(txt);
+  card.appendChild(menuWrap);
+
+  row.appendChild(tog);
+  row.appendChild(card);
+  wrap.appendChild(row);
+
+  // Children
+  if(node.children.length>0 && !collapsed[node.id]){
+    const cw=document.createElement('div');
+    cw.className='tree-children';
+    node.children.forEach(c=>cw.appendChild(renderNode(c,false)));
+    wrap.appendChild(cw);
+  }
+
+  return wrap;
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function openModal(title, bodyHTML, footHTML){
+  document.getElementById('m-title').textContent=title;
+  document.getElementById('m-body').innerHTML=bodyHTML;
+  document.getElementById('m-foot').innerHTML=footHTML;
+  document.getElementById('backdrop').classList.add('open');
+}
+function closeModal(){ document.getElementById('backdrop').classList.remove('open'); }
+document.getElementById('backdrop').addEventListener('click',e=>{ if(e.target.id==='backdrop') closeModal(); });
+
+// ── Assign person ──────────────────────────────────────────────────────────
+function openAssign(nodeId){
+  const node=findNode(tree,nodeId);
+  const opts=[
+    `<option value="">— Vacant —</option>`,
+    ...people.map(p=>`<option value="${p.id}" ${p.id===node.personId?'selected':''}>${p.name}</option>`)
+  ].join('');
+
+  openModal('Assign person',`
+    <div class="field">
+      <label>Role</label>
+      <input type="text" readonly value="${node.title}">
+    </div>
+    <div class="field">
+      <label>Person</label>
+      <select id="sel-person">${opts}</select>
+    </div>
+  `,`
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="doAssign(${nodeId})">Save</button>
+  `);
+}
+
+function doAssign(nodeId){
+  const val=document.getElementById('sel-person').value;
+  const node=findNode(tree,nodeId);
+  node.personId=val?parseInt(val):null;
+  closeModal(); render();
+}
+
+// ── Add role ───────────────────────────────────────────────────────────────
+function openAddRole(parentId){
+  const parent=parentId?findNode(tree,parentId):null;
+  const depts=['executive','technology','development','analysis','testing','operations','hr','finance','sales'];
+  const opts=depts.map(d=>`<option value="${d}">${deptLabel(d)}</option>`).join('');
+  openModal('Add role',`
+    <div class="field">
+      <label>Role title</label>
+      <input id="f-title" type="text" placeholder="e.g. Lead Developer">
+    </div>
+    <div class="field">
+      <label>Department</label>
+      <select id="f-dept">${opts}</select>
+    </div>
+    ${parent?`<p class="hint">Will appear under "${parent.title}"</p>`:''}
+  `,`
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="doAddRole(${parentId})">Add</button>
+  `);
+}
+
+function doAddRole(parentId){
+  const title=document.getElementById('f-title').value.trim();
+  const dept=document.getElementById('f-dept').value;
+  if(!title){ alert('Please enter a role title.'); return; }
+  const node={id:nextRid++,title,dept,personId:null,children:[]};
+  if(parentId){ const p=findNode(tree,parentId); p.children.push(node); collapsed[parentId]=false; }
+  closeModal(); render();
+}
+
+// ── Delete role ────────────────────────────────────────────────────────────
+function confirmDelete(nodeId){
+  const node=findNode(tree,nodeId);
+  openModal('Remove role',`
+    <p style="font-size:13px;line-height:1.7;">
+      Remove <strong>${node.title}</strong>?
+      ${node.children.length?`<br><span style="color:#c62828;font-size:12px;">This will also remove ${node.children.length} child role(s).</span>`:''}
+    </p>
+  `,`
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn" style="color:#c62828;border-color:#f5c6c6;" onclick="doDelete(${nodeId})">Remove</button>
+  `);
+}
+function doDelete(nodeId){ removeNode(tree,nodeId); closeModal(); render(); }
+
+// ── Init ───────────────────────────────────────────────────────────────────
+render();
+</script>
+
+<div class="vs-toast" id="vs-toast">
+  <svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="vs-toast-msg">Done</span>
+</div>
+
+<script>
+(function(){
+  var t;
+  function toast(msg){
+    var el=document.getElementById('vs-toast');
+    document.getElementById('vs-toast-msg').textContent=msg;
+    el.classList.add('show'); clearTimeout(t);
+    t=setTimeout(function(){el.classList.remove('show');},2400);
+  }
+  document.querySelectorAll('.nav-item[data-page]').forEach(function(item){
+    item.addEventListener('click',function(e){
+      e.stopPropagation();
+      toast(item.dataset.page+' — coming soon in this mockup');
+      document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+  var mt=document.getElementById('vs-menu');
+  if(mt) mt.addEventListener('click',function(e){ e.stopPropagation(); document.getElementById('sidebar').classList.toggle('open'); });
+})();
+</script>
+
+</body>
+</html>

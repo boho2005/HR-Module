@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employees — Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    width: 100%;
+    max-width: 760px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafafa;
+  }
+
+  .card-header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  .badge-new {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #e8f4fd;
+    color: #1a73e8;
+    font-weight: 500;
+  }
+
+  .section {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .section:last-of-type {
+    border-bottom: none;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #888;
+    margin-bottom: 14px;
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .field.full {
+    grid-column: 1 / -1;
+  }
+
+  .field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    font-size: 14px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid #d5d5d5;
+    background: #fff;
+    color: #1a1a1a;
+    font-family: inherit;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 3px rgba(26,115,232,0.12);
+  }
+
+  .field input::placeholder,
+  .field textarea::placeholder {
+    color: #bbb;
+  }
+
+  .field textarea {
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.6;
+  }
+
+  .field select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+  }
+
+  .field-hint {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 2px;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    background: #fafafa;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid #d5d5d5;
+    background: #fff;
+    color: #444;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+
+  .btn:hover { background: #f5f5f5; }
+
+  .btn-primary {
+    background: #1a73e8;
+    color: #fff;
+    border-color: #1a73e8;
+  }
+
+  .btn-primary:hover { background: #1558b0; }
+
+  @media (max-width: 560px) {
+    .field-grid { grid-template-columns: 1fr; }
+    .field.full { grid-column: 1; }
+  }
+
+  /* ===== Valleysoft sidebar shell (shared) ===== */
+  :root{
+    --vs-navy-1:#0a1a2f; --vs-navy-2:#0d2740;
+    --vs-teal:#2ec5e6; --vs-teal-soft:#7fdcef; --vs-blue:#1a73e8;
+  }
+  .app{ display:flex; min-height:100vh; }
+  .sidebar{
+    width:244px; min-width:244px;
+    background:linear-gradient(180deg,var(--vs-navy-2) 0%,var(--vs-navy-1) 100%);
+    color:#cdd7e3; display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh; z-index:200;
+  }
+  .brand{ display:flex; align-items:center; gap:11px; padding:20px 20px 18px; }
+  .brand-mark{ width:34px; height:34px; flex-shrink:0; }
+  .brand-text{ line-height:1; }
+  .brand-name{ font-size:17px; font-weight:700; letter-spacing:-0.02em; color:#fff; }
+  .brand-name .soft{ color:var(--vs-teal); }
+  .brand-sub{ font-size:8.5px; letter-spacing:0.18em; text-transform:uppercase; color:#6b8299; margin-top:3px; font-weight:600; }
+  .nav-section{ font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#55708a; font-weight:600; padding:8px 22px 6px; }
+  .nav{ padding:6px 12px; display:flex; flex-direction:column; gap:2px; }
+  .nav-item{ display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:8px; font-size:13.5px; font-weight:500; color:#b6c4d4; text-decoration:none; cursor:pointer; position:relative; transition:background .14s,color .14s; }
+  .nav-item svg{ width:17px; height:17px; stroke:currentColor; flex-shrink:0; opacity:.9; }
+  .nav-item:hover{ background:rgba(255,255,255,.06); color:#eaf1f8; }
+  .nav-item.active{ background:rgba(46,197,230,.14); color:#fff; }
+  .nav-item.active::before{ content:''; position:absolute; left:-12px; top:8px; bottom:8px; width:3px; border-radius:0 3px 3px 0; background:var(--vs-teal); }
+  .nav-item.active svg{ opacity:1; stroke:var(--vs-teal-soft); }
+  .nav-badge{ margin-left:auto; font-size:10.5px; font-weight:600; background:rgba(46,197,230,.18); color:var(--vs-teal-soft); padding:1px 7px; border-radius:20px; min-width:20px; text-align:center; }
+  .nav-item.active .nav-badge{ background:var(--vs-teal); color:#06202b; }
+  .sidebar-spacer{ flex:1; }
+  .me{ display:flex; align-items:center; gap:10px; margin:12px; padding:10px 11px; border-radius:10px; background:rgba(255,255,255,.05); }
+  .me-av{ width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff; background:#2e7d32; }
+  .me-text{ line-height:1.3; min-width:0; }
+  .me-name{ font-size:13px; font-weight:600; color:#eef3f8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .me-role{ font-size:11px; color:#7d93a8; }
+  .me-cog{ margin-left:auto; color:#6b8299; display:flex; }
+  .me-cog svg{ width:16px; height:16px; stroke:currentColor; }
+  .main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .menu-toggle{ display:none; width:38px; height:38px; border-radius:9px; background:#fff; border:1px solid #e0e0e0; align-items:center; justify-content:center; cursor:pointer; }
+  .menu-toggle svg{ width:20px; height:20px; stroke:#475467; }
+  .vs-toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:#101828; color:#fff; font-size:13px; font-weight:500; padding:11px 18px; border-radius:10px; box-shadow:0 8px 28px rgba(0,0,0,.25); display:flex; align-items:center; gap:9px; opacity:0; pointer-events:none; transition:opacity .22s,transform .22s; z-index:900; }
+  .vs-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .vs-toast svg{ width:16px; height:16px; stroke:var(--vs-teal); stroke-width:2.4; }
+
+  /* Employees page layout */
+  .topbar{ display:flex; align-items:center; gap:14px; padding:18px 24px; }
+  .page-title{ font-size:20px; font-weight:700; letter-spacing:-.02em; color:#1a1a1a; }
+  .emp-scroll{ flex:1; overflow:auto; padding:12px 24px 48px; display:flex; justify-content:center; align-items:flex-start; }
+
+  @media (max-width:760px){
+    .sidebar{ position:fixed; left:0; top:0; transform:translateX(-100%); transition:transform .25s; }
+    .sidebar.open{ transform:translateX(0); }
+    .menu-toggle{ display:flex; }
+    .emp-scroll{ padding:8px 14px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ══════════════════ SIDEBAR ══════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-label="Valleysoft">
+        <g fill="#ffffff">
+          <rect x="2"  y="4"  width="19" height="3.6" rx="1.8"/>
+          <rect x="5"  y="10" width="16" height="3.6" rx="1.8"/>
+          <rect x="8"  y="16" width="13" height="3.6" rx="1.8"/>
+          <rect x="11" y="22" width="10" height="3.6" rx="1.8"/>
+        </g>
+        <path d="M16 26 L21.5 33 L38 5 L32.5 4 Z" fill="#2ec5e6"/>
+      </svg>
+      <div class="brand-text">
+        <div class="brand-name">Valley<span class="soft">soft</span></div>
+        <div class="brand-sub">HR Suite</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Workspace</div>
+    <nav class="nav">
+      <a class="nav-item" href="Dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="Inbox.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><path d="M4 5h16v14H4z"/><path d="M4 8l8 5 8-5"/></svg>
+        Inbox <span class="nav-badge">3</span>
+      </a>
+      <a class="nav-item active" href="Employees.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.6"/><path d="M18 20a5 5 0 0 0-3-4.6"/></svg>
+        Employees
+      </a>
+      <a class="nav-item" href="Organization_Chart.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-2h12v2M12 12v2"/></svg>
+        Organization Chart
+      </a>
+      <a class="nav-item" href="Leaves.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>
+        Leaves <span class="nav-badge">5</span>
+      </a>
+      <a class="nav-item" href="Goals.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>
+        Goals
+      </a>
+      <a class="nav-item" href="Recruitment.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+        Recruitment <span class="nav-badge">6</span>
+      </a>
+      <a class="nav-item" href="Documents.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>
+        Documents <span class="nav-badge">6</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="me">
+      <div class="me-av">HI</div>
+      <div class="me-text">
+        <div class="me-name">Hany Ibrahim</div>
+        <div class="me-role">HR Manager</div>
+      </div>
+      <span class="me-cog"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
+    </div>
+  </aside>
+
+  <!-- ══════════════════ MAIN ══════════════════ -->
+  <main class="main">
+    <div class="topbar">
+      <button class="menu-toggle" id="vs-menu" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <h1 class="page-title">Employees</h1>
+    </div>
+
+    <div class="emp-scroll">
+
+<div class="card">
+
+  <div class="card-header">
+    <h1>Employee record</h1>
+    <span class="badge-new">New employee</span>
+  </div>
+
+  <!-- Basic information -->
+  <div class="section">
+    <div class="section-label">Basic information</div>
+    <div class="field-grid">
+
+      <div class="field">
+        <label for="emp-id">Employee ID</label>
+        <input type="text" id="emp-id" placeholder="Auto-generated" readonly style="background:#f8f8f8;color:#aaa;">
+        <span class="field-hint">Assigned automatically on save</span>
+      </div>
+
+      <div class="field">
+        <label for="emp-name">Full name</label>
+        <input type="text" id="emp-name" placeholder="e.g. Sara Ahmed">
+      </div>
+
+      <div class="field">
+        <label for="emp-phone">Telephone</label>
+        <input type="tel" id="emp-phone" placeholder="e.g. +20 100 000 0000">
+      </div>
+
+      <div class="field">
+        <label for="emp-email">Email</label>
+        <input type="email" id="emp-email" placeholder="e.g. name@company.com">
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Organization -->
+  <div class="section">
+    <div class="section-label">Organization</div>
+    <div class="field-grid">
+
+      <div class="field">
+        <label for="emp-dept">Department</label>
+        <select id="emp-dept" disabled style="background:#f8f8f8;color:#aaa;cursor:not-allowed;">
+          <option value="" disabled selected>Set from Organization Chart</option>
+          <option>Human Resources</option>
+          <option>Engineering</option>
+          <option>Sales</option>
+          <option>Finance</option>
+          <option>Operations</option>
+          <option>Design</option>
+          <option>Marketing</option>
+          <option>Legal</option>
+        </select>
+        <span class="field-hint">Concluded from the Organization Chart when the employee is assigned to a role</span>
+      </div>
+
+      <div class="field">
+        <label for="emp-role">Role</label>
+        <select id="emp-role" disabled style="background:#f8f8f8;color:#aaa;cursor:not-allowed;">
+          <option value="" disabled selected>Set from Organization Chart</option>
+          <option>Director</option>
+          <option>Team Lead</option>
+          <option>Senior Developer</option>
+          <option>Junior Developer</option>
+          <option>HR Manager</option>
+          <option>HR Specialist</option>
+          <option>Sales Manager</option>
+          <option>Sales Executive</option>
+          <option>Finance Analyst</option>
+          <option>Operations Lead</option>
+          <option>UX Designer</option>
+        </select>
+        <span class="field-hint">Concluded from the Organization Chart when the employee is assigned to a role</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Employment details -->
+  <div class="section">
+    <div class="section-label">Employment details</div>
+    <div class="field-grid">
+
+      <div class="field">
+        <label for="emp-join">Join date</label>
+        <input type="date" id="emp-join">
+      </div>
+
+      <div class="field">
+        <label for="emp-emptype">Employment type</label>
+        <select id="emp-emptype">
+          <option value="" disabled selected>Select type…</option>
+          <option>Full-time</option>
+          <option>Part-time</option>
+          <option>Contract</option>
+          <option>Temporary</option>
+          <option>Internship</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="emp-status">Status</label>
+        <select id="emp-status">
+          <option value="" disabled selected>Select status…</option>
+          <option>Working</option>
+          <option>Suspended</option>
+          <option>Resigned</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Identification -->
+  <div class="section">
+    <div class="section-label">Identification</div>
+    <div class="field-grid">
+
+      <div class="field">
+        <label for="emp-national-id">National ID</label>
+        <input type="text" id="emp-national-id" placeholder="e.g. 29001011234567">
+      </div>
+
+      <div class="field">
+        <label for="emp-passport">Passport No.</label>
+        <input type="text" id="emp-passport" placeholder="e.g. A12345678">
+      </div>
+
+      <div class="field">
+        <label for="emp-ssn">Social Security Number</label>
+        <input type="text" id="emp-ssn" placeholder="e.g. 123-45-6789">
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Qualifications -->
+  <div class="section">
+    <div class="section-label">Qualifications</div>
+    <div class="field-grid">
+
+      <div class="field full">
+        <label for="emp-training">Training</label>
+        <textarea id="emp-training" placeholder="List any training programs the employee has attended…"></textarea>
+      </div>
+
+      <div class="field full">
+        <label for="emp-certs">Certificates</label>
+        <textarea id="emp-certs" placeholder="List any professional certificates or qualifications…"></textarea>
+      </div>
+
+      <div class="field full">
+        <label for="emp-skills">Skills</label>
+        <textarea id="emp-skills" placeholder="List key skills, separated by commas…"></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="btn" onclick="document.querySelectorAll('input:not([readonly]),select,textarea').forEach(el=>el.value='')">Clear</button>
+    <button class="btn btn-primary">Save employee</button>
+  </div>
+
+</div>
+
+    </div><!-- /emp-scroll -->
+  </main>
+</div><!-- /app -->
+
+<div class="vs-toast" id="vs-toast">
+  <svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="vs-toast-msg">Done</span>
+</div>
+
+<script>
+(function(){
+  var t;
+  function toast(msg){
+    var el=document.getElementById('vs-toast');
+    document.getElementById('vs-toast-msg').textContent=msg;
+    el.classList.add('show'); clearTimeout(t);
+    t=setTimeout(function(){el.classList.remove('show');},2400);
+  }
+  document.querySelectorAll('.nav-item[data-page]').forEach(function(item){
+    item.addEventListener('click',function(){
+      toast(item.dataset.page+' — coming soon in this mockup');
+      document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+  var mt=document.getElementById('vs-menu');
+  if(mt) mt.addEventListener('click',function(){ document.getElementById('sidebar').classList.toggle('open'); });
+})();
+</script>
+
+</body>
+</html>
