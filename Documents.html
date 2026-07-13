@@ -221,6 +221,15 @@
     display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; background: #fafafa; border-top: 1px solid #eee;
   }
 
+  /* Template preview inside the print modal */
+  .tpl-desc {
+    font-size: 12.5px; color: #475467; line-height: 1.65; background: #fafbfc;
+    border: 1px solid #ececec; border-radius: 8px; padding: 13px 15px; max-height: 200px; overflow: auto;
+  }
+  .tpl-desc p { margin: 0 0 9px; }
+  .tpl-desc p:last-child { margin-bottom: 0; }
+  .header-btns { display: flex; gap: 10px; }
+
   @media (max-width: 760px) {
     .info-grid { grid-template-columns: 1fr 1fr; }
   }
@@ -416,10 +425,16 @@
   <div class="section">
     <div class="section-head">
       <div class="section-label">Documents</div>
-      <button class="btn btn-primary" id="add-doc">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Add document
-      </button>
+      <div class="header-btns">
+        <button class="btn" id="print-tpl">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 9V3h12v6M6 18H4v-6h16v6h-2M8 14h8v6H8z"/></svg>
+          Print template
+        </button>
+        <button class="btn btn-primary" id="add-doc">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Add document
+        </button>
+      </div>
     </div>
 
     <div class="table-wrap">
@@ -483,6 +498,42 @@
     <div class="modal-footer">
       <button class="btn" id="modal-cancel">Cancel</button>
       <button class="btn btn-primary" id="modal-add">Add document</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ PRINT TEMPLATE MODAL ══════════════════ -->
+<div class="modal-overlay" id="tpl-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tpl-modal-title">
+    <div class="modal-header">
+      <h2 id="tpl-modal-title">Print document template</h2>
+      <button class="modal-close" id="tpl-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="tpl-select">Template</label>
+        <select id="tpl-select">
+          <option value="hr">HR Letter (Employment Confirmation)</option>
+          <option value="recommendation">Recommendation Letter</option>
+          <option value="experience">Experience Certificate</option>
+          <option value="salary">Salary Certificate</option>
+          <option value="noc">No Objection Certificate</option>
+          <option value="internship">Internship Certificate</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Preview <span class="opt">(filled with this employee's details)</span></label>
+        <div class="tpl-desc" id="tpl-desc"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="tpl-cancel">Cancel</button>
+      <button class="btn btn-primary" id="tpl-print">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 9V3h12v6M6 18H4v-6h16v6h-2M8 14h8v6H8z"/></svg>
+        Print
+      </button>
     </div>
   </div>
 </div>
@@ -620,7 +671,9 @@
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   modal.addEventListener('click', function(e){ if(e.target===modal) closeModal(); });
-  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){ closeModal(); document.getElementById('tpl-modal').classList.remove('show'); }
+  });
 
   document.getElementById('modal-add').addEventListener('click', function(){
     var type = document.getElementById('new-doc-type').value;
@@ -635,6 +688,144 @@
     closeModal();
     render();
     toast('Document added · '+type);
+  });
+
+  /* ══════════════ Document templates (print) ══════════════ */
+
+  /* Employee details used to fill the templates (mirrors the info shown above). */
+  var emp = {
+    name:'Sara Ahmed', id:'EMP-1042', role:'Senior Developer', dept:'Engineering',
+    email:'sara.ahmed@company.com', phone:'+20 100 555 0142',
+    manager:'Hany Ibrahim', managerRole:'HR Manager',
+    joinDate:'14 March 2021', type:'Full-time'
+  };
+  var todayStr = '13 July 2026';
+
+  /* Each template: a title + a function returning body paragraphs (array of HTML strings). */
+  var templates = {
+    hr: {
+      title:'Employment Confirmation Letter',
+      paragraphs:function(e){ return [
+        'To Whom It May Concern,',
+        'This is to certify that <b>'+e.name+'</b>, holding employee ID <b>'+e.id+'</b>, is currently employed at Valleysoft as a <b>'+e.role+'</b> in the '+e.dept+' department. The employee has been a '+e.type.toLowerCase()+' member of our team since '+e.joinDate+'.',
+        'This letter has been issued upon the employee’s request and does not entail any liability on the part of the company.'
+      ]; }
+    },
+    recommendation: {
+      title:'Letter of Recommendation',
+      paragraphs:function(e){ return [
+        'To Whom It May Concern,',
+        'It is with great pleasure that I recommend <b>'+e.name+'</b>, who has served as a <b>'+e.role+'</b> in our '+e.dept+' department since '+e.joinDate+'.',
+        'Throughout this tenure, '+e.name+' has consistently demonstrated professionalism, technical excellence, and a strong commitment to delivering high-quality work. They would be a valuable addition to any organization.',
+        'I recommend '+e.name+' without reservation. Please feel free to contact me should you require any further information.'
+      ]; }
+    },
+    experience: {
+      title:'Experience Certificate',
+      paragraphs:function(e){ return [
+        'This is to certify that <b>'+e.name+'</b> (ID '+e.id+') has been working with Valleysoft as a <b>'+e.role+'</b> in the '+e.dept+' department from '+e.joinDate+' to the present date.',
+        'During this period, the employee has been found hardworking, diligent, and professional in the performance of all assigned duties. We wish them continued success in their future endeavors.'
+      ]; }
+    },
+    salary: {
+      title:'Salary Certificate',
+      paragraphs:function(e){ return [
+        'This is to certify that <b>'+e.name+'</b>, '+e.role+' in the '+e.dept+' department, is a '+e.type.toLowerCase()+' employee of Valleysoft, employed since '+e.joinDate+'.',
+        'The employee currently draws a total monthly salary of <b>____________________</b> (______________________________ only).',
+        'This certificate is issued upon the employee’s request for whatever legal purpose it may serve.'
+      ]; }
+    },
+    noc: {
+      title:'No Objection Certificate',
+      paragraphs:function(e){ return [
+        'This is to certify that <b>'+e.name+'</b> (ID '+e.id+') is employed at Valleysoft as a <b>'+e.role+'</b> since '+e.joinDate+'.',
+        'The company has <b>No Objection</b> to the employee traveling abroad or applying for a visa during the approved leave period. The employee is expected to resume duties thereafter.',
+        'This certificate is issued upon the employee’s request.'
+      ]; }
+    },
+    internship: {
+      title:'Internship Certificate',
+      paragraphs:function(e){ return [
+        'This is to certify that <b>'+e.name+'</b> has successfully completed an internship at Valleysoft in the '+e.dept+' department.',
+        'During the internship, they showed enthusiasm, a willingness to learn, and contributed positively to the team. We wish them the best in their future endeavors.'
+      ]; }
+    }
+  };
+
+  function tplParas(key){ return templates[key].paragraphs(emp); }
+
+  /* Build the full printable letter document (letterhead + body + signature). */
+  function buildLetter(key){
+    var tpl = templates[key];
+    var body = tplParas(key).map(function(p){ return '<p>'+p+'</p>'; }).join('');
+    return '<!doctype html><html><head><meta charset="utf-8">'+
+      '<title>'+tpl.title+' — '+emp.name+'</title><style>'+
+      '@page{ size:A4; margin:22mm 20mm; }'+
+      '*{ box-sizing:border-box; }'+
+      'body{ font-family:Georgia,\'Times New Roman\',serif; color:#1a1a1a; margin:0; background:#fff; }'+
+      '.sheet{ max-width:720px; margin:0 auto; padding:28px; }'+
+      '.lh{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:3px solid #2ec5e6; padding-bottom:12px; margin-bottom:26px; }'+
+      '.co-name{ font-family:Arial,Helvetica,sans-serif; font-size:23px; font-weight:800; letter-spacing:-.02em; color:#0d2740; }'+
+      '.co-name span{ color:#2ec5e6; }'+
+      '.co-sub{ font-family:Arial,Helvetica,sans-serif; font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:#8091a3; margin-top:3px; }'+
+      '.co-contact{ font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#667085; text-align:right; line-height:1.6; }'+
+      '.meta{ font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#475467; margin-bottom:22px; }'+
+      '.doc-title{ font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; text-align:center; margin:0 0 24px; text-decoration:underline; }'+
+      '.body p{ font-size:14px; line-height:1.95; margin:0 0 14px; text-align:justify; }'+
+      '.sign{ margin-top:52px; font-family:Arial,Helvetica,sans-serif; }'+
+      '.sign .line{ width:210px; border-top:1px solid #333; margin-bottom:7px; }'+
+      '.sign .nm{ font-weight:700; font-size:13px; }'+
+      '.sign .rl{ font-size:12px; color:#667085; }'+
+      '.no-print{ position:fixed; top:16px; right:16px; font-family:Arial,sans-serif; font-size:13px; font-weight:600; padding:9px 16px; border-radius:8px; border:none; background:#1a73e8; color:#fff; cursor:pointer; }'+
+      '@media print{ .no-print{ display:none; } }'+
+      '</style></head><body>'+
+      '<button class="no-print" onclick="window.print()">Print</button>'+
+      '<div class="sheet">'+
+        '<div class="lh">'+
+          '<div><div class="co-name">Valley<span>soft</span></div><div class="co-sub">HR Suite</div></div>'+
+          '<div class="co-contact">Valleysoft Co.<br>Cairo, Egypt<br>hr@valleysoft.com</div>'+
+        '</div>'+
+        '<div class="meta">Date: '+todayStr+'<br>Ref: HR/'+emp.id+'</div>'+
+        '<h1 class="doc-title">'+tpl.title+'</h1>'+
+        '<div class="body">'+body+'</div>'+
+        '<div class="sign">'+
+          '<div class="line"></div>'+
+          '<div class="nm">'+emp.manager+'</div>'+
+          '<div class="rl">'+emp.managerRole+' · Valleysoft</div>'+
+        '</div>'+
+      '</div>'+
+      '<script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>'+
+      '</body></html>';
+  }
+
+  function printTemplate(key){
+    var w = window.open('', '_blank');
+    if(!w){ toast('Please allow pop-ups to print the template'); return; }
+    w.document.open();
+    w.document.write(buildLetter(key));
+    w.document.close();
+    w.focus();
+  }
+
+  /* ---------- template modal ---------- */
+  var tplModal = document.getElementById('tpl-modal');
+  var tplSelect = document.getElementById('tpl-select');
+  function refreshPreview(){
+    document.getElementById('tpl-desc').innerHTML =
+      tplParas(tplSelect.value).map(function(p){ return '<p>'+p+'</p>'; }).join('');
+  }
+  function openTplModal(){ refreshPreview(); tplModal.classList.add('show'); }
+  function closeTplModal(){ tplModal.classList.remove('show'); }
+
+  document.getElementById('print-tpl').addEventListener('click', openTplModal);
+  document.getElementById('tpl-close').addEventListener('click', closeTplModal);
+  document.getElementById('tpl-cancel').addEventListener('click', closeTplModal);
+  tplModal.addEventListener('click', function(e){ if(e.target===tplModal) closeTplModal(); });
+  tplSelect.addEventListener('change', refreshPreview);
+  document.getElementById('tpl-print').addEventListener('click', function(){
+    printTemplate(tplSelect.value);
+    closeTplModal();
+    toast('Opening print preview — '+templates[tplSelect.value].title);
   });
 
   /* ---------- sidebar (shared) ---------- */
