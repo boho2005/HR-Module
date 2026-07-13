@@ -165,18 +165,9 @@
   .status-badge.approved::before { background: #28a745; }
   .status-badge.declined { background: #fdecea; color: #c0392b; }
   .status-badge.declined::before { background: #e74c3c; }
-  .status-badge.pending  { background: #fff4e0; color: #b9770e; }
-  .status-badge.pending::before { background: #f5a623; }
-
-  .status-actions { display: inline-flex; gap: 8px; }
-  .mini-btn {
-    font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 7px; cursor: pointer;
-    border: 1px solid #d5d5d5; background: #fff; font-family: inherit; transition: background .15s, border-color .15s;
-  }
-  .mini-btn.approve { color: #1e7e34; border-color: #bfe2c8; }
-  .mini-btn.approve:hover { background: #e7f6ec; }
-  .mini-btn.decline { color: #c0392b; border-color: #f2c6c0; }
-  .mini-btn.decline:hover { background: #fdecea; }
+  /* Approved despite the employee having no remaining balance — flagged in red */
+  .status-badge.out-of-balance { background: #c0392b; color: #fff; }
+  .status-badge.out-of-balance::before { background: #fff; }
 
   .footer {
     display: flex;
@@ -382,7 +373,7 @@
       </div>
       <div class="info-item">
         <div class="info-label">Manager</div>
-        <div class="info-value">Hany Ibrahim</div>
+        <div class="info-value">Karim Nour</div>
       </div>
       <div class="info-item">
         <div class="info-label">Join date</div>
@@ -448,10 +439,6 @@
     </div>
   </div>
 
-  <div class="footer">
-    <button class="btn btn-primary" id="new-leave">+ New leave request</button>
-  </div>
-
 </div>
 
     </div><!-- /emp-scroll -->
@@ -477,14 +464,16 @@
   /* ---------- config ---------- */
   var ENTITLEMENT = { Regular: 21, Casual: 7 };
 
-  /* ---------- sample data ---------- */
+  /* ---------- sample data ----------
+     status is set by the employee's manager (not HR): 'Approved', 'Declined',
+     or 'Out of Balance' (approved even though the employee had no balance left). */
   var leaves = [
     { id:1, start:'2026-01-06', end:'2026-01-08', days:3, type:'Regular', status:'Approved' },
     { id:2, start:'2026-02-16', end:'2026-02-16', days:1, type:'Casual',  status:'Approved' },
     { id:3, start:'2026-03-23', end:'2026-03-25', days:3, type:'Sick',    status:'Approved' },
     { id:4, start:'2026-05-04', end:'2026-05-07', days:4, type:'Regular', status:'Declined' },
-    { id:5, start:'2026-07-13', end:'2026-07-16', days:4, type:'Regular', status:'Pending'  },
-    { id:6, start:'2026-08-03', end:'2026-08-03', days:1, type:'Casual',  status:'Pending'  }
+    { id:5, start:'2026-07-13', end:'2026-07-16', days:4, type:'Regular', status:'Out of Balance' },
+    { id:6, start:'2026-08-03', end:'2026-08-03', days:1, type:'Casual',  status:'Approved' }
   ];
 
   var fmt = { day:'2-digit', month:'short', year:'numeric' };
@@ -495,9 +484,9 @@
   }
 
   /* ---------- balances ----------
-     Only Approved (and Pending, since they are committed) leaves consume
-     balance. Declined ones do not. Sick leave is tracked separately and does
-     not draw from Regular/Casual balances. */
+     Approved and Out-of-Balance leaves consume balance; Declined ones do not.
+     Sick leave is tracked separately and does not draw from Regular/Casual
+     balances. (Out of Balance is what pushes the remaining balance to zero.) */
   function computeTaken(type){
     return leaves
       .filter(function(l){ return l.type===type && l.status!=='Declined'; })
@@ -520,13 +509,9 @@
 
   /* ---------- table ---------- */
   function statusCell(l){
-    if(l.status==='Pending'){
-      return '<div class="status-actions">'+
-               '<button class="mini-btn approve" data-act="Approved" data-id="'+l.id+'">Approve</button>'+
-               '<button class="mini-btn decline" data-act="Declined" data-id="'+l.id+'">Decline</button>'+
-             '</div>';
-    }
-    return '<span class="status-badge '+l.status.toLowerCase()+'">'+l.status+'</span>';
+    /* read-only — leaves are approved/declined by the employee's manager, not HR */
+    var cls = l.status.toLowerCase().replace(/\s+/g,'-');   // "Out of Balance" -> "out-of-balance"
+    return '<span class="status-badge '+cls+'">'+l.status+'</span>';
   }
 
   function renderTable(){
@@ -543,22 +528,6 @@
   }
 
   function render(){ renderTable(); renderBalances(); }
-
-  /* ---------- interactions ---------- */
-  document.getElementById('leaves-body').addEventListener('click', function(e){
-    var btn=e.target.closest('.mini-btn');
-    if(!btn) return;
-    var id=Number(btn.dataset.id), act=btn.dataset.act;
-    var leave=leaves.filter(function(l){ return l.id===id; })[0];
-    if(!leave) return;
-    leave.status=act;
-    render();
-    toast('Leave '+(act==='Approved'?'approved':'declined')+' · '+fdate(leave.start));
-  });
-
-  document.getElementById('new-leave').addEventListener('click', function(){
-    toast('New leave request — coming soon in this mockup');
-  });
 
   /* ---------- sidebar (shared) ---------- */
   document.querySelectorAll('.nav-item[data-page]').forEach(function(item){

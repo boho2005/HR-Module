@@ -180,7 +180,7 @@
 
   /* Panels grid */
   .grid-main { display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .grid-sub  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-sub  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
   .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; }
   .panel-head {
@@ -269,13 +269,22 @@
   .pipe-fill { height: 100%; border-radius: 20px; }
   .pipe-val { font-size: 12.5px; font-weight: 600; width: 24px; text-align: right; }
 
-  /* goals pending approval */
-  .goals-body { padding: 6px 18px 16px; }
-  .gpa-row { display: flex; align-items: center; gap: 11px; padding: 9px 0; }
-  .gpa-row + .gpa-row { border-top: 1px solid #f0f2f4; }
-  .gpa-name { font-size: 13px; font-weight: 500; color: var(--ink); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .gpa-count { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #b9770e; background: #fff4e0; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
-  .gpa-empty { font-size: 13px; color: var(--ink-soft); padding: 10px 0; }
+  /* contract & probation alerts */
+  .alerts-body { padding: 6px 8px 8px; }
+  .alert { display: flex; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 9px; }
+  .alert + .alert { border-top: 1px solid var(--line-soft); }
+  .alert:hover { background: #fafbfc; }
+  .alert-ico { width: 34px; height: 34px; min-width: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+  .alert-ico svg { width: 18px; height: 18px; stroke-width: 1.9; }
+  .alert-info { flex: 1; min-width: 0; }
+  .alert-name { font-size: 13.5px; font-weight: 600; }
+  .alert-sub { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .alert-when { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .alert.contract  .alert-ico  { background: #fdece5; color: #e64a19; }
+  .alert.contract  .alert-when { background: #fdece5; color: #e64a19; }
+  .alert.probation .alert-ico  { background: #fff4e0; color: #b9770e; }
+  .alert.probation .alert-when { background: #fff4e0; color: #b9770e; }
+  .alert-empty { font-size: 13px; color: var(--ink-soft); padding: 14px 10px; }
 
   /* upcoming */
   .up-body { padding: 6px 8px 10px; }
@@ -468,8 +477,8 @@
             </div>
             <span class="kpi-delta up" style="color:#f57c00;background:#fef3e2;">needs review</span>
           </div>
-          <div class="kpi-num" id="kpi-pending">5</div>
-          <div class="kpi-label">Pending leave requests</div>
+          <div class="kpi-num" id="kpi-pending">4</div>
+          <div class="kpi-label">Contracts &amp; probations ending</div>
         </div>
 
         <div class="kpi">
@@ -487,13 +496,13 @@
       <!-- MAIN PANELS -->
       <div class="grid-main">
 
-        <!-- Leave requests -->
+        <!-- Contract & probation alerts -->
         <section class="panel">
           <div class="panel-head">
-            <h3>Leave requests <span class="count-pill" id="req-count">5 pending</span></h3>
-            <a class="panel-link" data-page="Leaves">View all</a>
+            <h3>Contract &amp; probation alerts <span class="count-pill" id="alert-count">0</span></h3>
+            <a class="panel-link" href="Employees.html">View all</a>
           </div>
-          <div class="panel-body" id="req-list"></div>
+          <div class="alerts-body" id="alerts"></div>
         </section>
 
         <!-- Missing documents -->
@@ -517,15 +526,6 @@
             <a class="panel-link" data-page="Recruitment">Open</a>
           </div>
           <div class="pipe" id="pipe"></div>
-        </section>
-
-        <!-- Goals pending approval -->
-        <section class="panel">
-          <div class="panel-head">
-            <h3>Goals pending approval</h3>
-            <a class="panel-link" href="Goals.html">Details</a>
-          </div>
-          <div class="goals-body" id="goals"></div>
         </section>
 
         <!-- Upcoming -->
@@ -572,66 +572,40 @@ function avatar(name, cls){
 document.getElementById('today').textContent =
   new Date().toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric', year:'numeric'});
 
-// ── Leave requests data ──────────────────────────────────────────────────────
-let requests = [
-  { name:'Omar Tarek',    role:'Senior Developer',  type:'annual', label:'Annual leave', dates:'Jul 10 – Jul 14', days:'5 days' },
-  { name:'Rania Adel',    role:'Senior Analyst',    type:'sick',   label:'Sick leave',   dates:'Jul 8',           days:'1 day'  },
-  { name:'Karim Nour',    role:'Development Mgr',    type:'annual', label:'Annual leave', dates:'Jul 21 – Jul 25', days:'5 days' },
-  { name:'Youssef Magdy', role:'Senior QA',         type:'remote', label:'Remote day',   dates:'Jul 9',           days:'1 day'  },
-  { name:'Sara Fahmy',    role:'Analysis Manager',  type:'unpaid', label:'Unpaid leave', dates:'Aug 1 – Aug 3',   days:'3 days' },
-];
+// ── Contract & probation alerts ──────────────────────────────────────────────
+// Contract alerts fire ~2 months before the contract end date;
+// probation alerts fire ~15 days before the probation end date.
+const ALERT_ICONS = {
+  contract:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M12 11v3.4M12 17.4h.01"/></svg>',
+  probation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5l3.2 2"/></svg>',
+};
 
-function renderRequests(){
-  const box = document.getElementById('req-list');
-  const pending = requests.filter(r => !r.done);
-  document.getElementById('kpi-pending').textContent = pending.length;
-  document.getElementById('req-count').textContent = pending.length + ' pending';
+const alerts = [
+  { kind:'probation', name:'Layla Mostafa', role:'Junior Developer',  detail:'Probation ends', date:'20 Jul 2026', days:7  },
+  { kind:'probation', name:'Ahmed Sayed',   role:'Backend Developer', detail:'Probation ends', date:'25 Jul 2026', days:12 },
+  { kind:'contract',  name:'Youssef Magdy', role:'Senior QA',         detail:'Contract ends',  date:'30 Aug 2026', days:48 },
+  { kind:'contract',  name:'Nada Salah',    role:'Finance Manager',   detail:'Contract ends',  date:'05 Sep 2026', days:54 },
+].sort((a,b) => a.days - b.days);
 
-  if(requests.length === 0){
-    box.innerHTML = `<div class="empty">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M20 6L9 17l-5-5"/></svg>
-      <div>All caught up — no requests to review.</div></div>`;
+function renderAlerts(){
+  const box = document.getElementById('alerts');
+  document.getElementById('kpi-pending').textContent = alerts.length;
+  document.getElementById('alert-count').textContent = alerts.length;
+
+  if(alerts.length === 0){
+    box.innerHTML = `<div class="alert-empty">No contracts or probations ending soon 🎉</div>`;
     return;
   }
 
-  box.innerHTML = requests.map((r, i) => {
-    if(r.done){
-      return `<div class="req">
-        ${avatar(r.name)}
-        <div class="req-info">
-          <div class="req-name">${r.name}</div>
-          <div class="req-meta"><span class="tag ${r.type}">${r.label}</span> ${r.dates} · ${r.days}</div>
-        </div>
-        <div class="resolved ${r.done==='approve'?'ok':'no'}">
-          ${r.done==='approve'
-            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg> Approved'
-            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6L6 18"/></svg> Declined'}
-        </div>
-      </div>`;
-    }
-    return `<div class="req">
-      ${avatar(r.name)}
-      <div class="req-info">
-        <div class="req-name">${r.name}</div>
-        <div class="req-meta"><span class="tag ${r.type}">${r.label}</span> ${r.dates} · ${r.days}</div>
+  box.innerHTML = alerts.map(a => `
+    <div class="alert ${a.kind}">
+      <div class="alert-ico">${ALERT_ICONS[a.kind]}</div>
+      <div class="alert-info">
+        <div class="alert-name">${a.name}</div>
+        <div class="alert-sub">${a.detail} ${a.date} · ${a.role}</div>
       </div>
-      <div class="req-actions">
-        <button class="act approve" title="Approve" onclick="resolve(${i},'approve')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg>
-        </button>
-        <button class="act decline" title="Decline" onclick="resolve(${i},'decline')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function resolve(i, action){
-  requests[i].done = action;
-  renderRequests();
-  const r = requests[i];
-  toast(action==='approve' ? `Approved ${r.name}'s ${r.label.toLowerCase()}` : `Declined ${r.name}'s request`);
+      <span class="alert-when">in ${a.days}d</span>
+    </div>`).join('');
 }
 
 // ── Missing documents data ───────────────────────────────────────────────────
@@ -677,25 +651,6 @@ document.getElementById('pipe').innerHTML = pipe.map(p => `
     <span class="pipe-val">${p.val}</span>
   </div>`).join('');
 
-// ── Goals pending approval ───────────────────────────────────────────────────
-// Employees who still have goals awaiting the manager's approval.
-const goalsPending = [
-  { name:'Sara Fahmy',    pending:3 },
-  { name:'Omar Tarek',    pending:2 },
-  { name:'Karim Nour',    pending:2 },
-  { name:'Youssef Magdy', pending:1 },
-  { name:'Dina Khaled',   pending:1 },
-].sort((a,b) => b.pending - a.pending);
-
-document.getElementById('goals').innerHTML = goalsPending.length
-  ? goalsPending.map(u => `
-      <div class="gpa-row">
-        ${avatar(u.name, 'sm')}
-        <span class="gpa-name">${u.name}</span>
-        <span class="gpa-count">${u.pending} ${u.pending === 1 ? 'goal' : 'goals'}</span>
-      </div>`).join('')
-  : `<div class="gpa-empty">No goals pending approval 🎉</div>`;
-
 // ── Upcoming ─────────────────────────────────────────────────────────────────
 const upcoming = [
   { icon:'🎉', bg:'#e8f1fd', title:'Layla Mostafa starts', sub:'Junior Developer · Onboarding', when:'Jul 14' },
@@ -736,7 +691,7 @@ document.querySelectorAll('.panel-link[data-page]').forEach(link => {
 });
 
 // ── Init ─────────────────────────────────────────────────────────────────────
-renderRequests();
+renderAlerts();
 renderDocs();
 </script>
 </body>

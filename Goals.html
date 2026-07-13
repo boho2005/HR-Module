@@ -136,20 +136,8 @@
   .status-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; }
   .status-badge.approved { background: #e7f6ec; color: #1e7e34; }
   .status-badge.approved::before { background: #28a745; }
-  .status-badge.declined { background: #fdecea; color: #c0392b; }
-  .status-badge.declined::before { background: #e74c3c; }
   .status-badge.pending  { background: #fff4e0; color: #b9770e; }
   .status-badge.pending::before { background: #f5a623; }
-
-  .status-actions { display: inline-flex; gap: 8px; }
-  .mini-btn {
-    font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 7px; cursor: pointer;
-    border: 1px solid #d5d5d5; background: #fff; font-family: inherit; transition: background .15s, border-color .15s;
-  }
-  .mini-btn.approve { color: #1e7e34; border-color: #bfe2c8; }
-  .mini-btn.approve:hover { background: #e7f6ec; }
-  .mini-btn.decline { color: #c0392b; border-color: #f2c6c0; }
-  .mini-btn.decline:hover { background: #fdecea; }
 
   .footer {
     display: flex;
@@ -354,7 +342,7 @@
       </div>
       <div class="info-item">
         <div class="info-label">Manager</div>
-        <div class="info-value">Hany Ibrahim</div>
+        <div class="info-value">Karim Nour</div>
       </div>
       <div class="info-item">
         <div class="info-label">Join date</div>
@@ -421,14 +409,15 @@
   }
 
   /* ---------- sample data ----------
-     added  = date the employee submitted the goal
-     approved = date the manager approved/declined (null while Pending) */
+     added    = date the employee submitted the goal
+     approved = date the line manager approved it (null while Pending)
+     status   = 'Approved' or 'Pending' — set by the employee's manager, not HR */
   var goals = [
     { id:1, quarter:'Q1', goal:'Ship the payroll export module to production',            added:'2026-01-09', approved:'2026-01-12', status:'Approved' },
     { id:2, quarter:'Q1', goal:'Complete the Advanced React certification',                added:'2026-01-15', approved:'2026-01-18', status:'Approved' },
     { id:3, quarter:'Q1', goal:'Reduce API p95 latency below 200ms',                       added:'2026-02-02', approved:null,          status:'Pending'  },
     { id:4, quarter:'Q2', goal:'Mentor two junior developers through onboarding',          added:'2026-04-06', approved:'2026-04-08', status:'Approved' },
-    { id:5, quarter:'Q2', goal:'Attend the regional tech conference as a speaker',         added:'2026-04-20', approved:'2026-04-22', status:'Declined' },
+    { id:5, quarter:'Q2', goal:'Attend the regional tech conference as a speaker',         added:'2026-04-20', approved:null,          status:'Pending'  },
     { id:6, quarter:'Q2', goal:'Migrate the reporting service to the new data warehouse',  added:'2026-05-11', approved:null,          status:'Pending'  },
     { id:7, quarter:'Q3', goal:'Lead the design review for the mobile app revamp',         added:'2026-07-03', approved:null,          status:'Pending'  }
   ];
@@ -444,12 +433,7 @@
   }
 
   function statusCell(g){
-    if(g.status==='Pending'){
-      return '<div class="status-actions">'+
-               '<button class="mini-btn approve" data-act="Approved" data-id="'+g.id+'">Approve</button>'+
-               '<button class="mini-btn decline" data-act="Declined" data-id="'+g.id+'">Decline</button>'+
-             '</div>';
-    }
+    /* read-only — approval is done by the employee's manager, not from here */
     return '<span class="status-badge '+g.status.toLowerCase()+'">'+g.status+'</span>';
   }
 
@@ -481,19 +465,6 @@
       el.classList.toggle('active', el===tab);
     });
     renderTable();
-  });
-
-  document.getElementById('goals-body').addEventListener('click', function(e){
-    var btn = e.target.closest('.mini-btn');
-    if(!btn) return;
-    var id = Number(btn.dataset.id), act = btn.dataset.act;
-    var goal = goals.filter(function(g){ return g.id===id; })[0];
-    if(!goal) return;
-    goal.status = act;
-    /* stamp the manager's action date (mockup: fixed to today) */
-    goal.approved = '2026-07-07';
-    renderTable();
-    toast('Goal '+(act==='Approved'?'approved':'declined'));
   });
 
   /* ---------- sidebar (shared) ---------- */
